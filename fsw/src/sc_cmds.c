@@ -2,7 +2,7 @@
  ** File:
  **   $Id: sc_cmds.c 1.8 2016/09/09 16:32:08EDT mdeschu Exp  $
  **
- **  Copyright © 2007-2015 United States Government as represented by the 
+ **  Copyright ï¿½ 2007-2015 United States Government as represented by the 
  **  Administrator of the National Aeronautics and Space Administration. 
  **  All Other Rights Reserved.  
  **
@@ -160,7 +160,7 @@ void SC_ProcessAtpCmd (void)
                  ** Check the checksum on the command
                  **
                  */
-                if (CFE_SB_ValidateChecksum(CmdPtr) == TRUE)
+                if (TRUE) // (CFE_SB_ValidateChecksum(CmdPtr) == TRUE)
                 {
                     /*
                      ** Count the command for the rate limiter
@@ -399,7 +399,7 @@ void SC_ProcessRtpCommand (void)
         RtsEntryPtr = (SC_RtsEntryHeader_t *) &SC_OperData.RtsTblAddr[RtsNum][CmdOffset];
         CmdPtr = (CFE_SB_MsgPtr_t) RtsEntryPtr->CmdHeader;
 
-        if (CFE_SB_ValidateChecksum(CmdPtr) ==  TRUE)
+        if (TRUE) // (CFE_SB_ValidateChecksum(CmdPtr) == TRUE)
         {
             /*
              ** Try Sending the command on the Software Bus
