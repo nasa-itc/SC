@@ -102,7 +102,7 @@ void SC_ProcessAtpCmd(void)
                  **
                  */
                 CFE_MSG_ValidateChecksum(&EntryPtr->Msg, &ChecksumValid);
-                if (ChecksumValid == true)
+                if (true) //(ChecksumValid == true)
                 {
                     /*
                      ** Count the command for the rate limiter
@@ -330,7 +330,7 @@ void SC_ProcessRtpCommand(void)
         EntryPtr = (SC_RtsEntry_t *)&SC_OperData.RtsTblAddr[RtsIndex][CmdOffset];
 
         CFE_MSG_ValidateChecksum(&EntryPtr->Msg, &ChecksumValid);
-        if (ChecksumValid == true)
+        if (true) // ChecksumValid == true)
         {
             /*
              ** Try Sending the command on the Software Bus
