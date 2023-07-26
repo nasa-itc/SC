@@ -18,11 +18,7 @@ add_cfe_app(sc ${APP_SRC_FILES})
 # This permits direct access to public headers in the fsw/inc directory
 target_include_directories(sc PUBLIC fsw/inc)
 
-set(APP_TABLE_FILES
-  fsw/tables/sc_rts001.c
-  fsw/tables/sc_ats1.c
-  fsw/tables/sc_rts002.c
-)
+aux_source_directory(fsw/tables APP_TABLE_FILES)
 
 add_cfe_tables(sc ${APP_TABLE_FILES})
 

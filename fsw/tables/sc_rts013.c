@@ -57,20 +57,20 @@ typedef struct
     SC_NoArgsCmd_t      cmd2;
     SC_RtsEntryHeader_t hdr3;
     SC_NoArgsCmd_t      cmd3;
-} SC_RtsStruct008_t;
+} SC_RtsStruct013_t;
 
 /* Define the union to size the table correctly */
 typedef union
 {
-    SC_RtsStruct008_t rts;
+    SC_RtsStruct013_t rts;
     uint16            buf[SC_RTS_BUFF_SIZE];
-} SC_RtsTable008_t;
+} SC_RtsTable013_t;
 
 /* Helper macro to get size of structure elements */
-#define SC_MEMBER_SIZE(member) (sizeof(((SC_RtsStruct008_t *)0)->member))
+#define SC_MEMBER_SIZE(member) (sizeof(((SC_RtsStruct013_t *)0)->member))
 
 /* Used designated intializers to be verbose, modify as needed/desired */
-SC_RtsTable008_t SC_Rts008 = {   
+SC_RtsTable013_t SC_Rts013 = {   
 .rts = {
     /* 1 */
     .hdr1.TimeTag   = 0,
@@ -87,4 +87,4 @@ SC_RtsTable008_t SC_Rts008 = {
 };
 
 /* Macro for table structure */
-CFE_TBL_FILEDEF(SC_Rts008, SC.RTS_TBL008, SC Example RTS_TBL008, sc_rts008.tbl)
+CFE_TBL_FILEDEF(SC_Rts013, SC.RTS_TBL013, SC Example RTS_TBL013, sc_rts013.tbl)
