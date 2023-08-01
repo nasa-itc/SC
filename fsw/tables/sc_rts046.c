@@ -19,7 +19,7 @@
 
 /**
  * @file
- *   CFS Stored Command (SC) sample RTS table 1
+ *   CFS Stored Command (SC) sample RTS table 8
  *
  * The following source code demonstrates how to create a sample
  * Stored Command RTS table using the software defined command structures.
@@ -30,8 +30,8 @@
  * the following commands that are scheduled as follows:
  *
  * SC NOOP command, execution time relative to start of RTS = 0
- * SC Enable RTS #2 command, execution time relative to prev cmd = 5
- * SC Start RTS #2 command, execution time relative to prev cmd = 5
+ * SC NOOP command, execution time relative to prev cmd = 5
+ * SC NOOP command, execution time relative to prev cmd = 5
  */
 
 #include "cfe.h"
@@ -47,12 +47,6 @@
 #ifndef SC_NOOP_CKSUM
 #define SC_NOOP_CKSUM (0x8F)
 #endif
-#ifndef SC_ENABLE_RTS2_CKSUM
-#define SC_ENABLE_RTS2_CKSUM (0x8E)
-#endif
-#ifndef SC_START_RTS2_CKSUM
-#define SC_START_RTS2_CKSUM (0x8D)
-#endif
 
 /* Custom table structure, modify as needed to add desired commands */
 typedef struct
@@ -60,39 +54,37 @@ typedef struct
     SC_RtsEntryHeader_t hdr1;
     SC_NoArgsCmd_t      cmd1;
     SC_RtsEntryHeader_t hdr2;
-    SC_RtsCmd_t         cmd2;
+    SC_NoArgsCmd_t      cmd2;
     SC_RtsEntryHeader_t hdr3;
-    SC_RtsCmd_t         cmd3;
-} SC_RtsStruct001_t;
+    SC_NoArgsCmd_t      cmd3;
+} SC_RtsStruct046_t;
 
 /* Define the union to size the table correctly */
 typedef union
 {
-    SC_RtsStruct001_t rts;
+    SC_RtsStruct046_t rts;
     uint16            buf[SC_RTS_BUFF_SIZE];
-} SC_RtsTable001_t;
+} SC_RtsTable046_t;
 
 /* Helper macro to get size of structure elements */
-#define SC_MEMBER_SIZE(member) (sizeof(((SC_RtsStruct001_t *)0)->member))
+#define SC_MEMBER_SIZE(member) (sizeof(((SC_RtsStruct046_t *)0)->member))
 
 /* Used designated intializers to be verbose, modify as needed/desired */
-SC_RtsTable001_t SC_Rts001 = {
+SC_RtsTable046_t SC_Rts046 = {   
 .rts = {
     /* 1 */
     .hdr1.TimeTag   = 0,
     .cmd1.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd1), SC_NOOP_CC, SC_NOOP_CKSUM),
 
     /* 2 */
-    .hdr2.TimeTag = 5,
-    .cmd2.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd2), SC_ENABLE_RTS_CC, SC_ENABLE_RTS2_CKSUM),
-    .cmd2.RtsId = 2,
+    .hdr2.TimeTag   = 5,
+    .cmd2.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd2), SC_NOOP_CC, SC_NOOP_CKSUM),
 
     /* 3 */
     .hdr3.TimeTag   = 5,
-    .cmd3.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd3), SC_START_RTS_CC, SC_START_RTS2_CKSUM),
-    .cmd3.RtsId     = 2,
+    .cmd3.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd3), SC_NOOP_CC, SC_NOOP_CKSUM),
     }
 };
 
 /* Macro for table structure */
-CFE_TBL_FILEDEF(SC_Rts001, SC.RTS_TBL001, SC Example RTS_TBL001, sc_rts001.tbl)
+CFE_TBL_FILEDEF(SC_Rts046, SC.RTS_TBL046, SC Example RTS_TBL046, sc_rts046.tbl)

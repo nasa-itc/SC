@@ -94,33 +94,34 @@ typedef union
 
 /* Used designated intializers to be verbose, modify as needed/desired */
 SC_AtsTable1_t SC_Ats1 = {
+.ats = {
     /* 1 */
-    .ats.hdr1.CmdNumber  = 1,
-    .ats.hdr1.TimeTag_MS = SC_CMD1_TIME >> 16,
-    .ats.hdr1.TimeTag_LS = SC_CMD1_TIME & 0xFFFF,
-    .ats.cmd1.CmdHeader  = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd1), SC_NOOP_CC, SC_NOOP_CKSUM),
+    .hdr1.CmdNumber  = 1,
+    .hdr1.TimeTag_MS = SC_CMD1_TIME >> 16,
+    .hdr1.TimeTag_LS = SC_CMD1_TIME & 0xFFFF,
+    .cmd1.CmdHeader  = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd1), SC_NOOP_CC, SC_NOOP_CKSUM),
 
     /* 2 */
-    .ats.hdr2.CmdNumber  = 2,
-    .ats.hdr2.TimeTag_MS = SC_CMD2_TIME >> 16,
-    .ats.hdr2.TimeTag_LS = SC_CMD2_TIME & 0xFFFF,
-    .ats.cmd2.CmdHeader =
-        CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd2), SC_ENABLE_RTS_CC, SC_ENABLE_RTS1_CKSUM),
-    .ats.cmd2.RtsId = 1,
+    .hdr2.CmdNumber  = 2,
+    .hdr2.TimeTag_MS = SC_CMD2_TIME >> 16,
+    .hdr2.TimeTag_LS = SC_CMD2_TIME & 0xFFFF,
+    .cmd2.CmdHeader  = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd2), SC_ENABLE_RTS_CC, SC_ENABLE_RTS1_CKSUM),
+    .cmd2.RtsId      = 1,
 
     /* 3 */
-    .ats.hdr3.CmdNumber  = 3,
-    .ats.hdr3.TimeTag_MS = SC_CMD3_TIME >> 16,
-    .ats.hdr3.TimeTag_LS = SC_CMD3_TIME & 0xFFFF,
-    .ats.cmd3.CmdHeader  = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd3), SC_START_RTS_CC, SC_START_RTS1_CKSUM),
-    .ats.cmd3.RtsId      = 1,
+    .hdr3.CmdNumber  = 3,
+    .hdr3.TimeTag_MS = SC_CMD3_TIME >> 16,
+    .hdr3.TimeTag_LS = SC_CMD3_TIME & 0xFFFF,
+    .cmd3.CmdHeader  = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd3), SC_START_RTS_CC, SC_START_RTS1_CKSUM),
+    .cmd3.RtsId      = 1,
 
     /* 4 */
-    .ats.hdr4.CmdNumber  = 4,
-    .ats.hdr4.TimeTag_MS = SC_CMD4_TIME >> 16,
-    .ats.hdr4.TimeTag_LS = SC_CMD4_TIME & 0xFFFF,
-    .ats.cmd4.CmdHeader =
-        CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd4), SC_RESET_COUNTERS_CC, SC_RESET_COUNTERS_CKSUM)};
+    .hdr4.CmdNumber  = 4,
+    .hdr4.TimeTag_MS = SC_CMD4_TIME >> 16,
+    .hdr4.TimeTag_LS = SC_CMD4_TIME & 0xFFFF,
+    .cmd4.CmdHeader  = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd4), SC_RESET_COUNTERS_CC, SC_RESET_COUNTERS_CKSUM),
+    }
+};
 
 /* Macro for table structure */
 CFE_TBL_FILEDEF(SC_Ats1, SC.ATS_TBL1, SC Example ATS_TBL1, sc_ats1.tbl)
