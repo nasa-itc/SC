@@ -1,133 +1,90 @@
 /************************************************************************
-**
-** $Id: sc_rts001.c 1.2 2015/10/08 15:19:09EDT sstrege Exp  $
-**
-**  Copyright � 2007-2014 United States Government as represented by the 
-**  Administrator of the National Aeronautics and Space Administration. 
-**  All Other Rights Reserved.  
-**
-**  This software was created at NASA's Goddard Space Flight Center.
-**  This software is governed by the NASA Open Source Agreement and may be 
-**  used, distributed and modified only pursuant to the terms of that 
-**  agreement.
-**
-** CFS Stored Command (SC) sample RTS table #1
-**
-** Note 1: The following source code demonstrates how to create a sample
-**         Stored Command RTS table.  The preferred method for creating
-**         flight versions of RTS tables is to use custom ground system
-**         tools that output the binary table files, skipping this step
-**         altogether.
-**         
-** Note 2: This source file creates a sample RTS table that contains only
-**         the following commands that are scheduled as follows:
-**
-**         SC NOOP command, execution time relative to start of RTS = 0
-**         SC Enable RTS #2 command, execution time relative to prev cmd = 5
-**         SC Start RTS #2 command, execution time relative to prev cmd = 5
-**
-** Note 3: The byte following the command code in each command packet
-**         secondary header must contain an 8 bit checksum.  Refer to
-**         the SC Users Guide for information on how to calculate this
-**         checksum.
-**
-** Note 4: If the command length (in bytes) is odd, a pad byte must be added 
-**         to the RTS command structure (opt data portion) to ensure the next 
-**         command starts on a word (uint16) boundary.
-**
-** $Log: sc_rts001.c  $
-** Revision 1.2 2015/10/08 15:19:09EDT sstrege 
-** Restoration from MKS 2009 Trunk
-** Revision 1.9 2015/03/02 13:01:55EST sstrege 
-** Added copyright information
-** Revision 1.8 2014/12/18 17:13:39EST sstrege 
-** Added note to alert users of required pad byte for odd length commands
-** Revision 1.7 2014/12/15 10:32:38EST lwalling 
-** Force Big Endian ccsds packet primary headers
-** Revision 1.6 2014/12/02 19:00:14EST lwalling 
-** Remove table compile warning from default tables
-** Revision 1.5 2010/04/22 13:30:42EDT lwalling 
-** Member renamed from sc_rts1.c to sc_rts001.c in project c:/MKSDATA/MKS-REPOSITORY/CFS-REPOSITORY/sc/fsw/tables/project.pj.
-** Revision 1.4 2010/04/22 12:30:42ACT lwalling 
-** Change default RTS table names from sc_rts1 to sc_rts001
-** Revision 1.3 2010/03/30 11:52:15EDT lwalling 
-** Calculate correct command checksum values
-** Revision 1.2 2010/03/26 18:04:19EDT lwalling 
-** Remove pad from ATS and RTS structures, change 32 bit ATS time to two 16 bit values
-** Revision 1.1 2010/03/16 15:43:08EDT lwalling 
-** Initial revision
-** Member added to project c:/MKSDATA/MKS-REPOSITORY/CFS-REPOSITORY/sc/fsw/tables/project.pj
-**
-*************************************************************************/
+ * NASA Docket No. GSC-18,924-1, and identified as “Core Flight
+ * System (cFS) Stored Command Application version 3.1.1”
+ *
+ * Copyright (c) 2021 United States Government as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ************************************************************************/
+
+/**
+ * @file
+ *   CFS Stored Command (SC) sample RTS table 8
+ *
+ * The following source code demonstrates how to create a sample
+ * Stored Command RTS table using the software defined command structures.
+ * It's also possible to create this table via alternative tools
+ * (ground system) and or system agnostic data definitions (XTCE/EDS/JSON).
+ *
+ * This source file creates a sample RTS table that contains only
+ * the following commands that are scheduled as follows:
+ *
+ * SC NOOP command, execution time relative to start of RTS = 0
+ * SC NOOP command, execution time relative to prev cmd = 5
+ * SC NOOP command, execution time relative to prev cmd = 5
+ */
 
 #include "cfe.h"
 #include "cfe_tbl_filedef.h"
 
-#include "sc_platform_cfg.h"    /* defines table buffer size */
-#include "sc_msgdefs.h"         /* defines SC command code values */
-#include "sc_msgids.h"          /* defines SC packet msg ID's */
+#include "sc_tbldefs.h"      /* defines SC table headers */
+#include "sc_platform_cfg.h" /* defines table buffer size */
+#include "sc_msgdefs.h"      /* defines SC command code values */
+#include "sc_msgids.h"       /* defines SC packet msg ID's */
+#include "sc_msg.h"          /* defines SC message structures */
 
+/* Checksum for each sample command */
+#ifndef SC_NOOP_CKSUM
+#define SC_NOOP_CKSUM (0x8F)
+#endif
 
-/*
-** Execution time for each sample command
-*/
-#define CMD1_TIME     0
-#define CMD2_TIME     5
-#define CMD3_TIME     5
-
-
-/*
-** Calculate checksum for each sample command
-*/
-#define CMD1_XSUM     0x008F
-#define CMD2_XSUM     0x0088
-#define CMD3_XSUM     0x008B
-
-
-/*
-** Optional command data values
-*/
-#define CMD2_ARG      2
-#define CMD3_ARG      2
-
-
-/*
-** Command packet segment flags and sequence counter
-** - 2 bits of segment flags (0xC000 = start and end of packet)
-** - 14 bits of sequence count (unused for command packets)
-*/
-#define PKT_FLAGS     0xC000
-
-
-/*
-** Length of cmd pkt data (in bytes minus one) that follows primary header (thus, 0xFFFF = 64k)
-*/
-#define CMD1_LENGTH   1
-#define CMD2_LENGTH   3
-#define CMD3_LENGTH   3
-
-
-/*
-** Sample cFE Table Header
-*/
-static CFE_TBL_FileDef_t CFE_TBL_FileDef __attribute__((__used__)) =
+/* Custom table structure, modify as needed to add desired commands */
+typedef struct
 {
-    "RTS_Table019", "SC.RTS_TBL019", "SC Sample RTS_TBL019",
-    "sc_rts019.tbl", (SC_RTS_BUFF_SIZE * sizeof(uint16))
+    SC_RtsEntryHeader_t hdr1;
+    SC_NoArgsCmd_t      cmd1;
+    SC_RtsEntryHeader_t hdr2;
+    SC_NoArgsCmd_t      cmd2;
+    SC_RtsEntryHeader_t hdr3;
+    SC_NoArgsCmd_t      cmd3;
+} SC_RtsStruct019_t;
+
+/* Define the union to size the table correctly */
+typedef union
+{
+    SC_RtsStruct019_t rts;
+    uint16            buf[SC_RTS_BUFF_SIZE];
+} SC_RtsTable019_t;
+
+/* Helper macro to get size of structure elements */
+#define SC_MEMBER_SIZE(member) (sizeof(((SC_RtsStruct019_t *)0)->member))
+
+/* Used designated intializers to be verbose, modify as needed/desired */
+SC_RtsTable019_t SC_Rts019 = {   
+.rts = {
+    /* 1 */
+    .hdr1.TimeTag   = 0,
+    .cmd1.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd1), SC_NOOP_CC, SC_NOOP_CKSUM),
+
+    /* 2 */
+    .hdr2.TimeTag   = 5,
+    .cmd2.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd2), SC_NOOP_CC, SC_NOOP_CKSUM),
+
+    /* 3 */
+    .hdr3.TimeTag   = 5,
+    .cmd3.CmdHeader = CFE_MSG_CMD_HDR_INIT(SC_CMD_MID, SC_MEMBER_SIZE(cmd3), SC_NOOP_CC, SC_NOOP_CKSUM),
+    }
 };
 
-
-/*
-** Sample RTS Table Data
-*/
-uint16 RTS_Table019[SC_RTS_BUFF_SIZE] =
-{
-  /*  cmd time,  <---------------------------- cmd pkt primary header ---------------------------->  <----- cmd pkt 2nd header ---->   <-- opt data ---> */
-     CMD1_TIME,  CFE_MAKE_BIG16(SC_CMD_MID), CFE_MAKE_BIG16(PKT_FLAGS), CFE_MAKE_BIG16(CMD1_LENGTH), ((SC_NOOP_CC << 8) | CMD1_XSUM),
-     CMD2_TIME,  CFE_MAKE_BIG16(SC_CMD_MID), CFE_MAKE_BIG16(PKT_FLAGS), CFE_MAKE_BIG16(CMD2_LENGTH), ((SC_ENABLE_RTS_CC << 8) | CMD2_XSUM), CMD2_ARG,
-     CMD3_TIME,  CFE_MAKE_BIG16(SC_CMD_MID), CFE_MAKE_BIG16(PKT_FLAGS), CFE_MAKE_BIG16(CMD3_LENGTH), ((SC_START_RTS_CC << 8) | CMD3_XSUM), CMD3_ARG
-};
-
-/************************/
-/*  End of File Comment */
-/************************/
+/* Macro for table structure */
+CFE_TBL_FILEDEF(SC_Rts019, SC.RTS_TBL019, SC Example RTS_TBL019, sc_rts019.tbl)
