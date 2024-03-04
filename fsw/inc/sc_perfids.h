@@ -29,7 +29,7 @@
  * \{
  */
 
-#define SC_APPMAIN_PERF_ID 35 /**< \brief Application main performance ID */
+#define SC_APPMAIN_PERF_ID 37 /**< \brief Application main performance ID */
 
 /**\}*/
 
