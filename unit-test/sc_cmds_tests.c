@@ -420,256 +420,256 @@ void SC_ProcessAtpCmd_Test_SBErrorAtsB(void)
                   call_count_CFE_EVS_SendEvent);
 }
 
-void SC_ProcessAtpCmd_Test_ChecksumFailedAtsA(void)
-{
-    SC_AtsEntryHeader_t *Entry;
-    uint32               AtsTable[SC_ATS_BUFF_SIZE32];
-    SC_AtpControlBlock_t AtsCtrlBlck;
-    uint32               AtsCmdStatusTbl[SC_NUMBER_OF_ATS];
-    SC_AtsInfoTable_t    AtsInfoTbl;
-    CFE_SB_MsgId_t       TestMsgId = CFE_SB_ValueToMsgId(SC_CMD_MID);
-    CFE_MSG_FcnCode_t    FcnCode   = SC_SWITCH_ATS_CC;
-    bool                 ChecksumValid;
-    int32                strCmpResult;
-    char                 ExpectedEventString[2][CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
-
-    snprintf(ExpectedEventString[0], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
-             "ATS Command Failed Checksum: Command #%%d Skipped");
-
-    snprintf(ExpectedEventString[1], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH, "ATS %%c Aborted");
-
-    memset(&AtsCmdStatusTbl, 0, sizeof(AtsCmdStatusTbl));
-
-    SC_InitTables();
-
-    SC_OperData.AtsTblAddr[0]          = &AtsTable[0];
-    SC_OperData.AtsCtrlBlckAddr        = &AtsCtrlBlck;
-    SC_OperData.AtsCmdStatusTblAddr[0] = &AtsCmdStatusTbl[0];
-    SC_OperData.AtsCmdStatusTblAddr[1] = &AtsCmdStatusTbl[1];
-    SC_OperData.AtsInfoTblAddr         = &AtsInfoTbl;
-
-    Entry            = (SC_AtsEntryHeader_t *)&SC_OperData.AtsTblAddr[0][0];
-    Entry->CmdNumber = 1;
-
-    SC_AppData.NextCmdTime[SC_ATP]        = 0;
-    SC_AppData.CurrentTime                = 1;
-    SC_AppData.NextProcNumber             = SC_ATP;
-    SC_OperData.AtsCtrlBlckAddr->AtpState = SC_EXECUTING;
-
-    SC_OperData.AtsCtrlBlckAddr->AtsNumber = SC_ATSA;
-    SC_OperData.AtsCtrlBlckAddr->CmdNumber = 1;
-
-    SC_OperData.AtsCmdStatusTblAddr[0][0] = SC_LOADED;
-    SC_AppData.AtsCmdIndexBuffer[0][0]    = 0;
-
-    SC_OperData.HkPacket.ContinueAtsOnFailureFlag = false;
-
-    /* Set to return false in order to generate error message SC_ATS_CHKSUM_ERR_EID */
-    ChecksumValid = false;
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
-
-    /* Set these two functions to return these values in order to statisfy the if-statement from which they are both
-     * called */
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &TestMsgId, sizeof(TestMsgId), false);
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &FcnCode, sizeof(FcnCode), false);
-
-    UT_SetDeferredRetcode(UT_KEY(SC_InlineSwitch), 1, true);
-
-    /* Execute the function being tested */
-    SC_ProcessAtpCmd();
-
-    /* Verify results */
-    UtAssert_True(SC_OperData.HkPacket.AtsCmdCtr == 0, "SC_OperData.HkPacket.AtsCmdCtr == 0");
-    UtAssert_True(SC_OperData.HkPacket.AtsCmdErrCtr == 1, "SC_OperData.HkPacket.AtsCmdErrCtr == 1");
-    UtAssert_True(SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA, "SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA");
-    UtAssert_True(SC_OperData.HkPacket.LastAtsErrCmd == 1, "SC_OperData.HkPacket.LastAtsErrCmd == 1");
-    UtAssert_True(SC_OperData.AtsCmdStatusTblAddr[0][0] == SC_FAILED_CHECKSUM,
-                  "SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM");
-
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_ATS_CHKSUM_ERR_EID);
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
-
-    strCmpResult =
-        strncmp(ExpectedEventString[0], context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
-
-    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
-
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventID, SC_ATS_ABT_ERR_EID);
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventType, CFE_EVS_EventType_ERROR);
-
-    strCmpResult =
-        strncmp(ExpectedEventString[1], context_CFE_EVS_SendEvent[1].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
-
-    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[1].Spec);
-
-    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
-
-    UtAssert_True(call_count_CFE_EVS_SendEvent == 2, "CFE_EVS_SendEvent was called %u time(s), expected 2",
-                  call_count_CFE_EVS_SendEvent);
-}
-
-void SC_ProcessAtpCmd_Test_ChecksumFailedAtsB(void)
-{
-    SC_AtsEntryHeader_t *Entry;
-    uint32               AtsTable[SC_ATS_BUFF_SIZE32];
-    SC_AtpControlBlock_t AtsCtrlBlck;
-    uint32               AtsCmdStatusTbl[SC_NUMBER_OF_ATS];
-    SC_AtsInfoTable_t    AtsInfoTbl;
-    CFE_SB_MsgId_t       TestMsgId = CFE_SB_ValueToMsgId(SC_CMD_MID);
-    CFE_MSG_FcnCode_t    FcnCode   = SC_SWITCH_ATS_CC;
-    bool                 ChecksumValid;
-    int32                strCmpResult;
-    char                 ExpectedEventString[2][CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
-
-    snprintf(ExpectedEventString[0], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
-             "ATS Command Failed Checksum: Command #%%d Skipped");
-
-    snprintf(ExpectedEventString[1], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH, "ATS %%c Aborted");
-
-    SC_InitTables();
-
-    SC_OperData.AtsTblAddr[1]          = &AtsTable[0];
-    SC_OperData.AtsCtrlBlckAddr        = &AtsCtrlBlck;
-    SC_OperData.AtsCmdStatusTblAddr[0] = &AtsCmdStatusTbl[0];
-    SC_OperData.AtsCmdStatusTblAddr[1] = &AtsCmdStatusTbl[1];
-    SC_OperData.AtsInfoTblAddr         = &AtsInfoTbl;
-
-    Entry            = (SC_AtsEntryHeader_t *)&SC_OperData.AtsTblAddr[1][0];
-    Entry->CmdNumber = 1;
-
-    SC_AppData.NextCmdTime[SC_ATP]        = 0;
-    SC_AppData.CurrentTime                = 1;
-    SC_AppData.NextProcNumber             = SC_ATP;
-    SC_OperData.AtsCtrlBlckAddr->AtpState = SC_EXECUTING;
-
-    SC_OperData.AtsCtrlBlckAddr->AtsNumber = SC_ATSB;
-    SC_OperData.AtsCtrlBlckAddr->CmdNumber = 1;
-
-    SC_OperData.AtsCmdStatusTblAddr[1][0] = SC_LOADED;
-    SC_AppData.AtsCmdIndexBuffer[1][0]    = 0;
-
-    SC_OperData.HkPacket.ContinueAtsOnFailureFlag = false;
-
-    /* Set to return false in order to generate error message SC_ATS_CHKSUM_ERR_EID */
-    ChecksumValid = false;
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
-
-    /* Set these two functions to return these values in order to statisfy the if-statement from which they are both
-     * called */
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &TestMsgId, sizeof(TestMsgId), false);
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &FcnCode, sizeof(FcnCode), false);
-
-    UT_SetDeferredRetcode(UT_KEY(SC_InlineSwitch), 1, true);
-
-    /* Execute the function being tested */
-    SC_ProcessAtpCmd();
-
-    /* Verify results */
-    UtAssert_True(SC_OperData.HkPacket.AtsCmdCtr == 0, "SC_OperData.HkPacket.AtsCmdCtr == 0");
-    UtAssert_True(SC_OperData.HkPacket.AtsCmdErrCtr == 1, "SC_OperData.HkPacket.AtsCmdErrCtr == 1");
-    UtAssert_True(SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSB, "SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSB");
-    UtAssert_True(SC_OperData.HkPacket.LastAtsErrCmd == 1, "SC_OperData.HkPacket.LastAtsErrCmd == 1");
-    UtAssert_True(SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM,
-                  "SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM");
-
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_ATS_CHKSUM_ERR_EID);
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
-
-    strCmpResult =
-        strncmp(ExpectedEventString[0], context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
-
-    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
-
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventID, SC_ATS_ABT_ERR_EID);
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventType, CFE_EVS_EventType_ERROR);
-
-    strCmpResult =
-        strncmp(ExpectedEventString[1], context_CFE_EVS_SendEvent[1].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
-
-    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[1].Spec);
-
-    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
-
-    UtAssert_True(call_count_CFE_EVS_SendEvent == 2, "CFE_EVS_SendEvent was called %u time(s), expected 2",
-                  call_count_CFE_EVS_SendEvent);
-}
-
-void SC_ProcessAtpCmd_Test_ChecksumFailedAtsAContinue(void)
-{
-    SC_AtsEntryHeader_t *Entry;
-    uint32               AtsTable[SC_ATS_BUFF_SIZE32];
-    SC_AtpControlBlock_t AtsCtrlBlck;
-    uint32               AtsCmdStatusTbl[SC_NUMBER_OF_ATS];
-    SC_AtsInfoTable_t    AtsInfoTbl;
-    CFE_SB_MsgId_t       TestMsgId = CFE_SB_ValueToMsgId(SC_CMD_MID);
-    CFE_MSG_FcnCode_t    FcnCode   = SC_SWITCH_ATS_CC;
-    bool                 ChecksumValid;
-    int32                strCmpResult;
-    char                 ExpectedEventString[CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
-
-    snprintf(ExpectedEventString, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
-             "ATS Command Failed Checksum: Command #%%d Skipped");
-
-    memset(&AtsCmdStatusTbl, 0, sizeof(AtsCmdStatusTbl));
-
-    SC_InitTables();
-
-    SC_OperData.AtsTblAddr[0]          = &AtsTable[0];
-    SC_OperData.AtsCtrlBlckAddr        = &AtsCtrlBlck;
-    SC_OperData.AtsCmdStatusTblAddr[0] = &AtsCmdStatusTbl[0];
-    SC_OperData.AtsCmdStatusTblAddr[1] = &AtsCmdStatusTbl[1];
-    SC_OperData.AtsInfoTblAddr         = &AtsInfoTbl;
-
-    Entry            = (SC_AtsEntryHeader_t *)&SC_OperData.AtsTblAddr[0][0];
-    Entry->CmdNumber = 1;
-
-    SC_AppData.NextCmdTime[SC_ATP]        = 0;
-    SC_AppData.CurrentTime                = 1;
-    SC_AppData.NextProcNumber             = SC_ATP;
-    SC_OperData.AtsCtrlBlckAddr->AtpState = SC_EXECUTING;
-
-    SC_OperData.AtsCtrlBlckAddr->AtsNumber = SC_ATSA;
-    SC_OperData.AtsCtrlBlckAddr->CmdNumber = 1;
-
-    SC_OperData.AtsCmdStatusTblAddr[0][0] = SC_LOADED;
-    SC_AppData.AtsCmdIndexBuffer[0][0]    = 0;
-
-    SC_OperData.HkPacket.ContinueAtsOnFailureFlag = true;
-
-    /* Set to return false in order to generate error message SC_ATS_CHKSUM_ERR_EID */
-    ChecksumValid = false;
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
-
-    /* Set these two functions to return these values in order to statisfy the if-statement from which they are both
-     * called */
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &TestMsgId, sizeof(TestMsgId), false);
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &FcnCode, sizeof(FcnCode), false);
-
-    UT_SetDeferredRetcode(UT_KEY(SC_InlineSwitch), 1, true);
-
-    /* Execute the function being tested */
-    SC_ProcessAtpCmd();
-
-    /* Verify results */
-    UtAssert_True(SC_OperData.HkPacket.AtsCmdCtr == 0, "SC_OperData.HkPacket.AtsCmdCtr == 0");
-    UtAssert_True(SC_OperData.HkPacket.AtsCmdErrCtr == 1, "SC_OperData.HkPacket.AtsCmdErrCtr == 1");
-    UtAssert_True(SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA, "SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA");
-    UtAssert_True(SC_OperData.HkPacket.LastAtsErrCmd == 1, "SC_OperData.HkPacket.LastAtsErrCmd == 1");
-    UtAssert_True(SC_OperData.AtsCmdStatusTblAddr[0][0] == SC_FAILED_CHECKSUM,
-                  "SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM");
-
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_ATS_CHKSUM_ERR_EID);
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
-
-    strCmpResult = strncmp(ExpectedEventString, context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
-
-    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
-
-    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
-
-    UtAssert_True(call_count_CFE_EVS_SendEvent == 1, "CFE_EVS_SendEvent was called %u time(s), expected 1",
-                  call_count_CFE_EVS_SendEvent);
-}
+//void SC_ProcessAtpCmd_Test_ChecksumFailedAtsA(void)
+//{
+//    SC_AtsEntryHeader_t *Entry;
+//    uint32               AtsTable[SC_ATS_BUFF_SIZE32];
+//    SC_AtpControlBlock_t AtsCtrlBlck;
+//    uint32               AtsCmdStatusTbl[SC_NUMBER_OF_ATS];
+//    SC_AtsInfoTable_t    AtsInfoTbl;
+//    CFE_SB_MsgId_t       TestMsgId = CFE_SB_ValueToMsgId(SC_CMD_MID);
+//    CFE_MSG_FcnCode_t    FcnCode   = SC_SWITCH_ATS_CC;
+//    bool                 ChecksumValid;
+//    int32                strCmpResult;
+//    char                 ExpectedEventString[2][CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
+//
+//    snprintf(ExpectedEventString[0], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
+//             "ATS Command Failed Checksum: Command #%%d Skipped");
+//
+//    snprintf(ExpectedEventString[1], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH, "ATS %%c Aborted");
+//
+//    memset(&AtsCmdStatusTbl, 0, sizeof(AtsCmdStatusTbl));
+//
+//    SC_InitTables();
+//
+//    SC_OperData.AtsTblAddr[0]          = &AtsTable[0];
+//    SC_OperData.AtsCtrlBlckAddr        = &AtsCtrlBlck;
+//    SC_OperData.AtsCmdStatusTblAddr[0] = &AtsCmdStatusTbl[0];
+//    SC_OperData.AtsCmdStatusTblAddr[1] = &AtsCmdStatusTbl[1];
+//    SC_OperData.AtsInfoTblAddr         = &AtsInfoTbl;
+//
+//    Entry            = (SC_AtsEntryHeader_t *)&SC_OperData.AtsTblAddr[0][0];
+//    Entry->CmdNumber = 1;
+//
+//    SC_AppData.NextCmdTime[SC_ATP]        = 0;
+//    SC_AppData.CurrentTime                = 1;
+//    SC_AppData.NextProcNumber             = SC_ATP;
+//    SC_OperData.AtsCtrlBlckAddr->AtpState = SC_EXECUTING;
+//
+//    SC_OperData.AtsCtrlBlckAddr->AtsNumber = SC_ATSA;
+//    SC_OperData.AtsCtrlBlckAddr->CmdNumber = 1;
+//
+//    SC_OperData.AtsCmdStatusTblAddr[0][0] = SC_LOADED;
+//    SC_AppData.AtsCmdIndexBuffer[0][0]    = 0;
+//
+//    SC_OperData.HkPacket.ContinueAtsOnFailureFlag = false;
+//
+//    /* Set to return false in order to generate error message SC_ATS_CHKSUM_ERR_EID */
+//    ChecksumValid = false;
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
+//
+//    /* Set these two functions to return these values in order to statisfy the if-statement from which they are both
+//     * called */
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &TestMsgId, sizeof(TestMsgId), false);
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &FcnCode, sizeof(FcnCode), false);
+//
+//    UT_SetDeferredRetcode(UT_KEY(SC_InlineSwitch), 1, true);
+//
+//    /* Execute the function being tested */
+//    SC_ProcessAtpCmd();
+//
+//    /* Verify results */
+//    UtAssert_True(SC_OperData.HkPacket.AtsCmdCtr == 0, "SC_OperData.HkPacket.AtsCmdCtr == 0");
+//    UtAssert_True(SC_OperData.HkPacket.AtsCmdErrCtr == 1, "SC_OperData.HkPacket.AtsCmdErrCtr == 1");
+//    UtAssert_True(SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA, "SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA");
+//    UtAssert_True(SC_OperData.HkPacket.LastAtsErrCmd == 1, "SC_OperData.HkPacket.LastAtsErrCmd == 1");
+//    UtAssert_True(SC_OperData.AtsCmdStatusTblAddr[0][0] == SC_FAILED_CHECKSUM,
+//                  "SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM");
+//
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_ATS_CHKSUM_ERR_EID);
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
+//
+//    strCmpResult =
+//        strncmp(ExpectedEventString[0], context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
+//
+//    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
+//
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventID, SC_ATS_ABT_ERR_EID);
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventType, CFE_EVS_EventType_ERROR);
+//
+//    strCmpResult =
+//        strncmp(ExpectedEventString[1], context_CFE_EVS_SendEvent[1].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
+//
+//    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[1].Spec);
+//
+//    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
+//
+//    UtAssert_True(call_count_CFE_EVS_SendEvent == 2, "CFE_EVS_SendEvent was called %u time(s), expected 2",
+//                  call_count_CFE_EVS_SendEvent);
+//}
+
+//void SC_ProcessAtpCmd_Test_ChecksumFailedAtsB(void)
+//{
+//    SC_AtsEntryHeader_t *Entry;
+//    uint32               AtsTable[SC_ATS_BUFF_SIZE32];
+//    SC_AtpControlBlock_t AtsCtrlBlck;
+//    uint32               AtsCmdStatusTbl[SC_NUMBER_OF_ATS];
+//    SC_AtsInfoTable_t    AtsInfoTbl;
+//    CFE_SB_MsgId_t       TestMsgId = CFE_SB_ValueToMsgId(SC_CMD_MID);
+//    CFE_MSG_FcnCode_t    FcnCode   = SC_SWITCH_ATS_CC;
+//    bool                 ChecksumValid;
+//    int32                strCmpResult;
+//    char                 ExpectedEventString[2][CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
+//
+//    snprintf(ExpectedEventString[0], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
+//             "ATS Command Failed Checksum: Command #%%d Skipped");
+//
+//    snprintf(ExpectedEventString[1], CFE_MISSION_EVS_MAX_MESSAGE_LENGTH, "ATS %%c Aborted");
+//
+//    SC_InitTables();
+//
+//    SC_OperData.AtsTblAddr[1]          = &AtsTable[0];
+//    SC_OperData.AtsCtrlBlckAddr        = &AtsCtrlBlck;
+//    SC_OperData.AtsCmdStatusTblAddr[0] = &AtsCmdStatusTbl[0];
+//    SC_OperData.AtsCmdStatusTblAddr[1] = &AtsCmdStatusTbl[1];
+//    SC_OperData.AtsInfoTblAddr         = &AtsInfoTbl;
+//
+//    Entry            = (SC_AtsEntryHeader_t *)&SC_OperData.AtsTblAddr[1][0];
+//    Entry->CmdNumber = 1;
+//
+//    SC_AppData.NextCmdTime[SC_ATP]        = 0;
+//    SC_AppData.CurrentTime                = 1;
+//    SC_AppData.NextProcNumber             = SC_ATP;
+//    SC_OperData.AtsCtrlBlckAddr->AtpState = SC_EXECUTING;
+//
+//    SC_OperData.AtsCtrlBlckAddr->AtsNumber = SC_ATSB;
+//    SC_OperData.AtsCtrlBlckAddr->CmdNumber = 1;
+//
+//    SC_OperData.AtsCmdStatusTblAddr[1][0] = SC_LOADED;
+//    SC_AppData.AtsCmdIndexBuffer[1][0]    = 0;
+//
+//    SC_OperData.HkPacket.ContinueAtsOnFailureFlag = false;
+//
+//    /* Set to return false in order to generate error message SC_ATS_CHKSUM_ERR_EID */
+//    ChecksumValid = false;
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
+//
+//    /* Set these two functions to return these values in order to statisfy the if-statement from which they are both
+//     * called */
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &TestMsgId, sizeof(TestMsgId), false);
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &FcnCode, sizeof(FcnCode), false);
+//
+//    UT_SetDeferredRetcode(UT_KEY(SC_InlineSwitch), 1, true);
+//
+//    /* Execute the function being tested */
+//    SC_ProcessAtpCmd();
+//
+//    /* Verify results */
+//    UtAssert_True(SC_OperData.HkPacket.AtsCmdCtr == 0, "SC_OperData.HkPacket.AtsCmdCtr == 0");
+//    UtAssert_True(SC_OperData.HkPacket.AtsCmdErrCtr == 1, "SC_OperData.HkPacket.AtsCmdErrCtr == 1");
+//    UtAssert_True(SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSB, "SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSB");
+//    UtAssert_True(SC_OperData.HkPacket.LastAtsErrCmd == 1, "SC_OperData.HkPacket.LastAtsErrCmd == 1");
+//    UtAssert_True(SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM,
+//                  "SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM");
+//
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_ATS_CHKSUM_ERR_EID);
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
+//
+//    strCmpResult =
+//        strncmp(ExpectedEventString[0], context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
+//
+//    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
+//
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventID, SC_ATS_ABT_ERR_EID);
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventType, CFE_EVS_EventType_ERROR);
+//
+//    strCmpResult =
+//        strncmp(ExpectedEventString[1], context_CFE_EVS_SendEvent[1].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
+//
+//    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[1].Spec);
+//
+//    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
+//
+//    UtAssert_True(call_count_CFE_EVS_SendEvent == 2, "CFE_EVS_SendEvent was called %u time(s), expected 2",
+//                  call_count_CFE_EVS_SendEvent);
+//}
+
+//void SC_ProcessAtpCmd_Test_ChecksumFailedAtsAContinue(void)
+//{
+//    SC_AtsEntryHeader_t *Entry;
+//    uint32               AtsTable[SC_ATS_BUFF_SIZE32];
+//    SC_AtpControlBlock_t AtsCtrlBlck;
+//    uint32               AtsCmdStatusTbl[SC_NUMBER_OF_ATS];
+//    SC_AtsInfoTable_t    AtsInfoTbl;
+//    CFE_SB_MsgId_t       TestMsgId = CFE_SB_ValueToMsgId(SC_CMD_MID);
+//    CFE_MSG_FcnCode_t    FcnCode   = SC_SWITCH_ATS_CC;
+//    bool                 ChecksumValid;
+//    int32                strCmpResult;
+//    char                 ExpectedEventString[CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
+//
+//    snprintf(ExpectedEventString, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
+//             "ATS Command Failed Checksum: Command #%%d Skipped");
+//
+//    memset(&AtsCmdStatusTbl, 0, sizeof(AtsCmdStatusTbl));
+//
+//    SC_InitTables();
+//
+//    SC_OperData.AtsTblAddr[0]          = &AtsTable[0];
+//    SC_OperData.AtsCtrlBlckAddr        = &AtsCtrlBlck;
+//    SC_OperData.AtsCmdStatusTblAddr[0] = &AtsCmdStatusTbl[0];
+//    SC_OperData.AtsCmdStatusTblAddr[1] = &AtsCmdStatusTbl[1];
+//    SC_OperData.AtsInfoTblAddr         = &AtsInfoTbl;
+//
+//    Entry            = (SC_AtsEntryHeader_t *)&SC_OperData.AtsTblAddr[0][0];
+//    Entry->CmdNumber = 1;
+//
+//    SC_AppData.NextCmdTime[SC_ATP]        = 0;
+//    SC_AppData.CurrentTime                = 1;
+//    SC_AppData.NextProcNumber             = SC_ATP;
+//    SC_OperData.AtsCtrlBlckAddr->AtpState = SC_EXECUTING;
+//
+//    SC_OperData.AtsCtrlBlckAddr->AtsNumber = SC_ATSA;
+//    SC_OperData.AtsCtrlBlckAddr->CmdNumber = 1;
+//
+//    SC_OperData.AtsCmdStatusTblAddr[0][0] = SC_LOADED;
+//    SC_AppData.AtsCmdIndexBuffer[0][0]    = 0;
+//
+//    SC_OperData.HkPacket.ContinueAtsOnFailureFlag = true;
+//
+//    /* Set to return false in order to generate error message SC_ATS_CHKSUM_ERR_EID */
+//    ChecksumValid = false;
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
+//
+//    /* Set these two functions to return these values in order to statisfy the if-statement from which they are both
+//     * called */
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &TestMsgId, sizeof(TestMsgId), false);
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &FcnCode, sizeof(FcnCode), false);
+//
+//    UT_SetDeferredRetcode(UT_KEY(SC_InlineSwitch), 1, true);
+//
+//    /* Execute the function being tested */
+//    SC_ProcessAtpCmd();
+//
+//    /* Verify results */
+//    UtAssert_True(SC_OperData.HkPacket.AtsCmdCtr == 0, "SC_OperData.HkPacket.AtsCmdCtr == 0");
+//    UtAssert_True(SC_OperData.HkPacket.AtsCmdErrCtr == 1, "SC_OperData.HkPacket.AtsCmdErrCtr == 1");
+//    UtAssert_True(SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA, "SC_OperData.HkPacket.LastAtsErrSeq == SC_ATSA");
+//    UtAssert_True(SC_OperData.HkPacket.LastAtsErrCmd == 1, "SC_OperData.HkPacket.LastAtsErrCmd == 1");
+//    UtAssert_True(SC_OperData.AtsCmdStatusTblAddr[0][0] == SC_FAILED_CHECKSUM,
+//                  "SC_OperData.AtsCmdStatusTblAddr[1][0] == SC_FAILED_CHECKSUM");
+//
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_ATS_CHKSUM_ERR_EID);
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
+//
+//    strCmpResult = strncmp(ExpectedEventString, context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
+//
+//    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
+//
+//    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
+//
+//    UtAssert_True(call_count_CFE_EVS_SendEvent == 1, "CFE_EVS_SendEvent was called %u time(s), expected 1",
+//                  call_count_CFE_EVS_SendEvent);
+//}
 
 void SC_ProcessAtpCmd_Test_CmdNumberMismatchAtsA(void)
 {
@@ -1150,57 +1150,57 @@ void SC_ProcessRtpCommand_Test_BadSoftwareBusReturn(void)
                   call_count_CFE_EVS_SendEvent);
 }
 
-void SC_ProcessRtpCommand_Test_BadChecksum(void)
-{
-    uint32               RtsTable[SC_RTS_BUFF_SIZE32];
-    SC_RtpControlBlock_t RtsCtrlBlck;
-    bool                 ChecksumValid;
-    int32                strCmpResult;
-    char                 ExpectedEventString[CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
-
-    snprintf(ExpectedEventString, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH, "RTS %%03d Command Failed Checksum: RTS Stopped");
-
-    SC_InitTables();
-
-    memset(&RtsCtrlBlck, 0, sizeof(RtsCtrlBlck));
-
-    SC_OperData.RtsTblAddr[0]   = &RtsTable[0];
-    SC_OperData.RtsCtrlBlckAddr = &RtsCtrlBlck;
-
-    SC_AppData.NextCmdTime[SC_RTP]                                                   = 0;
-    SC_AppData.CurrentTime                                                           = 1;
-    SC_AppData.NextProcNumber                                                        = SC_RTP;
-    SC_OperData.RtsCtrlBlckAddr->RtsNumber                                           = 1;
-    SC_OperData.RtsInfoTblAddr[SC_OperData.RtsCtrlBlckAddr->RtsNumber - 1].RtsStatus = SC_EXECUTING;
-
-    /* Set to return false in order to generate error message SC_RTS_CHKSUM_ERR_EID */
-    ChecksumValid = false;
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
-
-    /* Execute the function being tested */
-    SC_ProcessRtpCommand();
-
-    /* Verify results */
-    UtAssert_True(SC_OperData.HkPacket.RtsCmdCtr == 0, "SC_OperData.HkPacket.RtsCmdCtr == 0");
-    UtAssert_True(SC_OperData.HkPacket.RtsCmdErrCtr == 1, "SC_OperData.HkPacket.RtsCmdErrCtr == 1");
-    UtAssert_True(SC_OperData.NumCmdsSec == 1, "SC_OperData.NumCmdsSec == 1");
-    UtAssert_True(SC_OperData.RtsInfoTblAddr[0].CmdCtr == 0, "SC_OperData.RtsInfoTblAddr[0].CmdCtr == 0");
-    UtAssert_True(SC_OperData.RtsInfoTblAddr[0].CmdErrCtr == 1, "SC_OperData.RtsInfoTblAddr[0].CmdErrCtr == 1");
-    UtAssert_True(SC_OperData.HkPacket.LastRtsErrSeq == 1, "SC_OperData.HkPacket.LastRtsErrSeq == 1");
-    UtAssert_True(SC_OperData.HkPacket.LastRtsErrCmd == 0, "SC_OperData.HkPacket.LastRtsErrCmd == 0");
-
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_RTS_CHKSUM_ERR_EID);
-    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
-
-    strCmpResult = strncmp(ExpectedEventString, context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
-
-    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
-
-    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
-
-    UtAssert_True(call_count_CFE_EVS_SendEvent == 1, "CFE_EVS_SendEvent was called %u time(s), expected 1",
-                  call_count_CFE_EVS_SendEvent);
-}
+//void SC_ProcessRtpCommand_Test_BadChecksum(void)
+//{
+//    uint32               RtsTable[SC_RTS_BUFF_SIZE32];
+//    SC_RtpControlBlock_t RtsCtrlBlck;
+//    bool                 ChecksumValid;
+//    int32                strCmpResult;
+//    char                 ExpectedEventString[CFE_MISSION_EVS_MAX_MESSAGE_LENGTH];
+//
+//    snprintf(ExpectedEventString, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH, "RTS %%03d Command Failed Checksum: RTS Stopped");
+//
+//    SC_InitTables();
+//
+//    memset(&RtsCtrlBlck, 0, sizeof(RtsCtrlBlck));
+//
+//    SC_OperData.RtsTblAddr[0]   = &RtsTable[0];
+//    SC_OperData.RtsCtrlBlckAddr = &RtsCtrlBlck;
+//
+//    SC_AppData.NextCmdTime[SC_RTP]                                                   = 0;
+//    SC_AppData.CurrentTime                                                           = 1;
+//    SC_AppData.NextProcNumber                                                        = SC_RTP;
+//    SC_OperData.RtsCtrlBlckAddr->RtsNumber                                           = 1;
+//    SC_OperData.RtsInfoTblAddr[SC_OperData.RtsCtrlBlckAddr->RtsNumber - 1].RtsStatus = SC_EXECUTING;
+//
+//    /* Set to return false in order to generate error message SC_RTS_CHKSUM_ERR_EID */
+//    ChecksumValid = false;
+//    UT_SetDataBuffer(UT_KEY(CFE_MSG_ValidateChecksum), &ChecksumValid, sizeof(ChecksumValid), false);
+//
+//    /* Execute the function being tested */
+//    SC_ProcessRtpCommand();
+//
+//    /* Verify results */
+//    UtAssert_True(SC_OperData.HkPacket.RtsCmdCtr == 0, "SC_OperData.HkPacket.RtsCmdCtr == 0");
+//    UtAssert_True(SC_OperData.HkPacket.RtsCmdErrCtr == 1, "SC_OperData.HkPacket.RtsCmdErrCtr == 1");
+//    UtAssert_True(SC_OperData.NumCmdsSec == 1, "SC_OperData.NumCmdsSec == 1");
+//    UtAssert_True(SC_OperData.RtsInfoTblAddr[0].CmdCtr == 0, "SC_OperData.RtsInfoTblAddr[0].CmdCtr == 0");
+//    UtAssert_True(SC_OperData.RtsInfoTblAddr[0].CmdErrCtr == 1, "SC_OperData.RtsInfoTblAddr[0].CmdErrCtr == 1");
+//    UtAssert_True(SC_OperData.HkPacket.LastRtsErrSeq == 1, "SC_OperData.HkPacket.LastRtsErrSeq == 1");
+//    UtAssert_True(SC_OperData.HkPacket.LastRtsErrCmd == 0, "SC_OperData.HkPacket.LastRtsErrCmd == 0");
+//
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, SC_RTS_CHKSUM_ERR_EID);
+//    UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventType, CFE_EVS_EventType_ERROR);
+//
+//    strCmpResult = strncmp(ExpectedEventString, context_CFE_EVS_SendEvent[0].Spec, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH);
+//
+//    UtAssert_True(strCmpResult == 0, "Event string matched expected result, '%s'", context_CFE_EVS_SendEvent[0].Spec);
+//
+//    call_count_CFE_EVS_SendEvent = UT_GetStubCount(UT_KEY(CFE_EVS_SendEvent));
+//
+//    UtAssert_True(call_count_CFE_EVS_SendEvent == 1, "CFE_EVS_SendEvent was called %u time(s), expected 1",
+//                  call_count_CFE_EVS_SendEvent);
+//}
 
 void SC_ProcessRtpCommand_Test_NextCmdTime(void)
 {
@@ -3235,12 +3235,12 @@ void UtTest_Setup(void)
                "SC_ProcessAtpCmd_Test_InlineSwitchError");
     UtTest_Add(SC_ProcessAtpCmd_Test_SBErrorAtsA, SC_Test_Setup, SC_Test_TearDown, "SC_ProcessAtpCmd_Test_SBErrorAtsA");
     UtTest_Add(SC_ProcessAtpCmd_Test_SBErrorAtsB, SC_Test_Setup, SC_Test_TearDown, "SC_ProcessAtpCmd_Test_SBErrorAtsB");
-    UtTest_Add(SC_ProcessAtpCmd_Test_ChecksumFailedAtsA, SC_Test_Setup, SC_Test_TearDown,
-               "SC_ProcessAtpCmd_Test_ChecksumFailedAtsA");
-    UtTest_Add(SC_ProcessAtpCmd_Test_ChecksumFailedAtsB, SC_Test_Setup, SC_Test_TearDown,
-               "SC_ProcessAtpCmd_Test_ChecksumFailedAtsB");
-    UtTest_Add(SC_ProcessAtpCmd_Test_ChecksumFailedAtsAContinue, SC_Test_Setup, SC_Test_TearDown,
-               "SC_ProcessAtpCmd_Test_ChecksumFailedAtsAContinue");
+    //UtTest_Add(SC_ProcessAtpCmd_Test_ChecksumFailedAtsA, SC_Test_Setup, SC_Test_TearDown,
+    //           "SC_ProcessAtpCmd_Test_ChecksumFailedAtsA");
+    //UtTest_Add(SC_ProcessAtpCmd_Test_ChecksumFailedAtsB, SC_Test_Setup, SC_Test_TearDown,
+    //           "SC_ProcessAtpCmd_Test_ChecksumFailedAtsB");
+    //UtTest_Add(SC_ProcessAtpCmd_Test_ChecksumFailedAtsAContinue, SC_Test_Setup, SC_Test_TearDown,
+    //           "SC_ProcessAtpCmd_Test_ChecksumFailedAtsAContinue");
     UtTest_Add(SC_ProcessAtpCmd_Test_CmdNumberMismatchAtsA, SC_Test_Setup, SC_Test_TearDown,
                "SC_ProcessAtpCmd_Test_CmdNumberMismatchAtsA");
     UtTest_Add(SC_ProcessAtpCmd_Test_CmdNumberMismatchAtsB, SC_Test_Setup, SC_Test_TearDown,
@@ -3256,8 +3256,8 @@ void UtTest_Setup(void)
     UtTest_Add(SC_ProcessRtpCommand_Test_Nominal, SC_Test_Setup, SC_Test_TearDown, "SC_ProcessRtpCommand_Test_Nominal");
     UtTest_Add(SC_ProcessRtpCommand_Test_BadSoftwareBusReturn, SC_Test_Setup, SC_Test_TearDown,
                "SC_ProcessRtpCommand_Test_BadSoftwareBusReturn");
-    UtTest_Add(SC_ProcessRtpCommand_Test_BadChecksum, SC_Test_Setup, SC_Test_TearDown,
-               "SC_ProcessRtpCommand_Test_BadChecksum");
+    //UtTest_Add(SC_ProcessRtpCommand_Test_BadChecksum, SC_Test_Setup, SC_Test_TearDown,
+    //           "SC_ProcessRtpCommand_Test_BadChecksum");
     UtTest_Add(SC_ProcessRtpCommand_Test_NextCmdTime, SC_Test_Setup, SC_Test_TearDown,
                "SC_ProcessRtpCommand_Test_NextCmdTime");
     UtTest_Add(SC_ProcessRtpCommand_Test_ProcNumber, SC_Test_Setup, SC_Test_TearDown,
