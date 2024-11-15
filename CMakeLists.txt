@@ -6,7 +6,7 @@ set(APP_SRC_FILES
   fsw/src/sc_app.c
   fsw/src/sc_atsrq.c
   fsw/src/sc_state.c
-  fsw/src/sc_loads.c
+  #fsw/src/sc_loads.c
   fsw/src/sc_cmds.c
 )
 
