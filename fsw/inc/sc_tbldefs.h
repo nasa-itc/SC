@@ -35,6 +35,7 @@
  *************************************************************************/
 #define SC_ATS_HEADER_SIZE (sizeof(SC_AtsEntryHeader_t)) /**< \brief ATS header size in bytes */
 #define SC_RTS_HEADER_SIZE (sizeof(SC_RtsEntryHeader_t)) /**< \brief RTS header size in bytes */
+// #define ENABLE_GROUND_OPERATIONS_EXERCISE //Define for Ground Operations Exercise, comment out if not performing NOS3 Scenario
 
 /**
  * \defgroup cfscstblids ID definitions for cFE Table Services manage table request command
